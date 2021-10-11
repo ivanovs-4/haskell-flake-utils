@@ -38,14 +38,23 @@ let
       else
         obj;
 
+  maybeCall = obj: args:
+    if (builtins.typeOf obj == "lambda")
+      then
+        obj args
+      else
+        obj;
+
   outputs = flake-utils.lib.eachSystem systems (system:
     let
       overlayWithHpPreOverrides = final: prev: {
         haskellPackages = lib.haskellPackagesOverrideComopsable prev hpPreOverrides;
       };
 
+      cabal2nixArgs_ = maybeCall cabal2nixArgs { pkgs = pkgsWithOur; inherit system; };
+
       hpOverrides =
-        (new: old: { ${name} = old.callCabal2nix name self cabal2nixArgs; });
+        (new: old: { ${name} = old.callCabal2nix name self cabal2nixArgs_; });
 
       overlayOur = final: prev: {
         haskellPackages = lib.haskellPackagesOverrideComopsable prev hpOverrides;
@@ -80,7 +89,7 @@ let
       (
         if shell != null then
         {
-          devShell = (maybeImport shell) { pkgs = pkgsWithOur; };
+          devShell = (maybeImport shell) { pkgs = pkgsWithOur; inherit system; };
         }
         else { }
         )

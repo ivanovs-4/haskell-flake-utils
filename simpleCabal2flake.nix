@@ -86,14 +86,23 @@ let
 
       //
 
-      (
-        if shell != null then
-        {
-          devShell = (maybeImport shell) { pkgs = pkgsWithOur; inherit system; };
-        }
-        else { }
-        )
-      )
-    );
+      {
+        devShell = (
+          if shell != null
+          then maybeImport shell
+          else
+            {pkgs, ...}: pkgs.mkShell {
+              buildInputs = with pkgs.haskellPackages; [
+                ghcid
+                cabal-install
+                (ghcWithPackages (h: with h; [
+                ]))
+              ];
+            }
+        ) { pkgs = pkgsWithOur; inherit system; };
+      }
+
+    )
+  );
 
 in outputs

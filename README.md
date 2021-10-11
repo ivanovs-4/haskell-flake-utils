@@ -56,15 +56,24 @@ Here is how it looks like in practice:
   outputs = { self, nixpkgs, flake-utils }:
     haskell-flake-utils.lib.simpleFlake {
       inherit self nixpkgs;
-      name = "simple-cabal-package-flake";
-      shell = {pkgs}: pkgs.mkShell {
-        buildInputs = with pkgs.haskellPackages; [
-          ghcid
-          cabal-install
-          (ghcWithPackages (h: with h; [
-          ]))
-        ];
-      };
+      name = "cabal-package-name";
     };
 }
 ```
+
+This makes the following commands available
+```
+nix develop
+cabal build
+```
+
+```
+nix develop -c cabal repl
+```
+
+```
+nix build
+./result/bin/<binary-name>
+```
+
+Also this new flake may be used in `haskellFlakes` from other such flakes.

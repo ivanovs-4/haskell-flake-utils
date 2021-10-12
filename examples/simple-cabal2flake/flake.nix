@@ -4,7 +4,7 @@
   inputs.flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
-    flake-utils.lib.simpleFlake {
+    flake-utils.lib.simpleCabal2flake {
       inherit self nixpkgs;
 
       name = "simple-cabal2flake";

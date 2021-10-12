@@ -54,7 +54,7 @@ Here is how it looks like in practice:
   inputs.flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
-    haskell-flake-utils.lib.simpleFlake {
+    haskell-flake-utils.lib.simpleCabal2flake {
       inherit self nixpkgs;
       name = "cabal-package-name";
     };
@@ -69,6 +69,10 @@ cabal build
 
 ```
 nix develop -c cabal repl
+```
+
+```
+nix develop -c ghcid
 ```
 
 ```

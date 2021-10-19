@@ -6,6 +6,18 @@
   };
 
   outputs = { self, flake-utils }: {
+
     lib = import ./. { inherit flake-utils; };
+
+    templates = {
+
+      simple-cabal-flake = {
+        path = ./examples/simple-cabal2flake;
+        description = "A Hakell cabal package";
+      };
+
+    };
+
   };
+
 }

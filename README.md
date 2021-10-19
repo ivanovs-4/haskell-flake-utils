@@ -55,7 +55,7 @@ Here is how it looks like in practice:
 {
   description = "Haskell flake utils demo";
 
-  inputs.flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
+  inputs.haskell-flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
 
   outputs = { self, nixpkgs, flake-utils }:
     haskell-flake-utils.lib.simpleCabal2flake {
@@ -64,6 +64,12 @@ Here is how it looks like in practice:
     };
 }
 ```
+
+Nix flake template available:
+```
+nix flake init -t github:ivanovs-4/haskell-flake-utils#simple-cabal-flake
+```
+
 
 This makes the following commands available
 ```

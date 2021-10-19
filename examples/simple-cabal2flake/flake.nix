@@ -13,14 +13,5 @@
 
       cabal2nixArgs = {};
 
-      shell = {pkgs}: pkgs.mkShell {
-        buildInputs = with pkgs.haskellPackages; [
-          ghcid
-          cabal-install
-          (ghcWithPackages (h: with h; [
-          ]))
-        ];
-      };
-
     };
 }

@@ -37,6 +37,10 @@ Input:
   cabal2nixArgs ? { }
 , # maps to the devShell output. Pass in a shell.nix file or function.
   shell ? null
+, # additional build intputs of the default shell
+  shellExtBuildInputs ? []
+, # wether to build hoogle in the default shell
+  shellwithHoogle ? true
 , # pass the list of supported systems
   systems ? [ "x86_64-linux" ]
 }: null

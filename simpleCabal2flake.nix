@@ -21,6 +21,10 @@
   cabal2nixArgs ? { }
 , # maps to the devShell output. Pass in a shell.nix file or function.
   shell ? null
+, # additional build intputs of the default shell
+  shellExtBuildInputs ? []
+, # wether to build hoogle in the default shell
+  shellwithHoogle ? true
 , # pass the list of supported systems
   systems ? [ "x86_64-linux" ]
 }:
@@ -91,13 +95,18 @@ let
           if shell != null
           then maybeImport shell
           else
-            {pkgs, ...}: pkgs.mkShell {
-              buildInputs = with pkgs.haskellPackages; [
-                ghcid
-                cabal-install
-                (ghcWithPackages (h: with h; [
-                ]))
-              ];
+            {pkgs, ...}:
+            pkgs.haskellPackages.shellFor {
+              packages = _: [ pkgs.haskellPackages.${name} ];
+              withHoogle = shellwithHoogle;
+              buildInputs = (
+                with pkgs.haskellPackages; ([
+                  ghcid
+                  cabal-install
+                ])
+                ++
+                (maybeCall shellExtBuildInputs { pkgs = pkgsWithOur; inherit system; })
+              );
             }
         ) { pkgs = pkgsWithOur; inherit system; };
       }

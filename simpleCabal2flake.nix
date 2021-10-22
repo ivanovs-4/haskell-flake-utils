@@ -72,13 +72,13 @@ let
     in (
       {
 
-        overlay = nixpkgs.legacyPackages.${system}.lib.composeManyExtensions ([ ]
+        overlay = final: prev: prev.lib.composeManyExtensions ([ ]
           ++ preOverlays
           ++ (map (fl: fl.overlay.${system}) haskellFlakes)
           ++ (loadOverlay preOverlay)
           ++ [ overlayWithHpPreOverrides ]
           ++ [ overlayOur ]
-          );
+          ) final prev;
 
         overlays = ([ self.overlay.${system} ]);
 

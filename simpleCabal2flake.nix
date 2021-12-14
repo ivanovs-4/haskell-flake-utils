@@ -16,7 +16,7 @@
 , # pass either a function or a file
   preOverlay ? null
 , # override haskell packages
-  hpPreOverrides ? (_: _: { })
+  hpPreOverrides ? ({...}: _: _: { })
 , # arguments for callCabal2nix
   cabal2nixArgs ? { }
 , # maps to the devShell output. Pass in a shell.nix file or function.
@@ -52,7 +52,7 @@ let
   outputs = flake-utils.lib.eachSystem systems (system:
     let
       overlayWithHpPreOverrides = final: prev: {
-        haskellPackages = lib.haskellPackagesOverrideComopsable prev hpPreOverrides;
+        haskellPackages = lib.haskellPackagesOverrideComopsable prev (hpPreOverrides { pkgs = pkgsWithOur; inherit system; });
       };
 
       cabal2nixArgs_ = maybeCall cabal2nixArgs { pkgs = pkgsWithOur; inherit system; };

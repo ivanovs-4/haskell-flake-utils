@@ -32,7 +32,7 @@ Input:
 , # pass either a function or a file
   preOverlay ? null
 , # override haskell packages
-  hpPreOverrides ? (_: _: { })
+  hpPreOverrides ? ({...}: _: _: { })
 , # arguments for callCabal2nix
   cabal2nixArgs ? { }
 , # maps to the devShell output. Pass in a shell.nix file or function.

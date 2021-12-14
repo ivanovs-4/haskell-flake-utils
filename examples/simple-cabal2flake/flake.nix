@@ -31,7 +31,7 @@
       # preOverlay = ./overlay.nix;
 
       # Override haskell packages
-      # hpPreOverrides = new: old: {
+      # hpPreOverrides = { pkgs, system }: new: old: {
       # };
 
       # Arguments for callCabal2nix

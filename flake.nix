@@ -16,6 +16,11 @@
         description = "A Hakell cabal package";
       };
 
+      # simple-cabal-project-flake = {
+      #   path = ./examples/simple-cabal-project2flake;  # TODO implement it
+      #   description = "A Hakell cabal project";
+      # };
+
     };
 
   };

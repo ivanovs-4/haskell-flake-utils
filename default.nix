@@ -2,8 +2,9 @@
 let
   # This function tries to capture a common haskell cabal package flake pattern.
   simpleCabal2flake = import ./simpleCabal2flake.nix { inherit lib flake-utils; };
+  simpleCabalProject2flake = import ./simpleCabalProject2flake.nix { inherit lib flake-utils; };
 
-  haskellPackagesOverrideComopsable = pkgs: hpOverrides:
+  haskellPackagesOverrideComposable = pkgs: hpOverrides:
     pkgs.haskellPackages.override (oldAttrs: {
       overrides =
         pkgs.lib.composeExtensions
@@ -11,10 +12,19 @@ let
           hpOverrides;
     });
 
+  tunePackages = pkgs: old: with pkgs.lib;
+      attrsets.mapAttrs (n: fs: trivial.pipe old.${n} fs);
+
+  jailbreakUnbreak = pkgs: pkg:
+      pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
+
   lib = {
     inherit
       simpleCabal2flake
-      haskellPackagesOverrideComopsable
+      simpleCabalProject2flake
+      haskellPackagesOverrideComposable
+      tunePackages
+      jailbreakUnbreak
       ;
   };
 in

@@ -7,6 +7,10 @@
   nixpkgs
 , # package name
   name
+, #
+  packageNames ? []
+, #
+  packageDirs ? {}
 , # nixpkgs config
   config ? { }
 , # add another haskell flakes as requirements
@@ -21,6 +25,8 @@
   hpOverrides ? null
 , # arguments for callCabal2nix
   cabal2nixArgs ? { }
+, #
+  packageCabal2nixArgs ? {}
 , # maps to the devShell output. Pass in a shell.nix file or function.
   shell ? null
 , # additional build intputs of the default shell
@@ -65,14 +71,23 @@ let
       hpOverrides_ = (
           if hpOverrides != null
           then hpOverrides { inherit pkgs system; }
-          else new: old: {
-              "${name}" = old.callCabal2nix name self (maybeCall cabal2nixArgs { inherit pkgs system; });
-            }
+          else (new: old:
+            with pkgs.lib.attrsets;
+            genAttrs packageNames_ (n:
+              old.callCabal2nixWithOptions n self ("--subpath ${ attrByPath [n] n packageDirs }") (
+                attrByPath [n]
+                  (maybeCall cabal2nixArgs { inherit pkgs system; })
+                  (maybeCall packageCabal2nixArgs { inherit pkgs system; })
+              )
+            )
+          )
         );
 
       overlayOur = final: prev: {
         haskellPackages = lib.haskellPackagesOverrideComposable prev hpOverrides_;
       };
+
+      packageNames_ = pkgs.lib.lists.unique ([ name ] ++ packageNames);
 
       getAttrs = names: attrs: pkgs.lib.attrsets.genAttrs names (n: attrs.${n});
 
@@ -89,7 +104,7 @@ let
 
         overlays = ([ self.overlay.${system} ]);
 
-        packages.${name} = pkgs.haskellPackages.${name};
+        packages = getAttrs packageNames_ pkgs.haskellPackages;
 
         defaultPackage = self.packages.${system}.${name};
 
@@ -104,7 +119,7 @@ let
           else
             {pkgs, ...}:
             pkgs.haskellPackages.shellFor {
-              packages = _: [ pkgs.haskellPackages.${name} ];
+              packages = _: pkgs.lib.attrsets.attrVals packageNames_ pkgs.haskellPackages;
               withHoogle = shellwithHoogle;
               buildInputs = (
                 with pkgs.haskellPackages; ([

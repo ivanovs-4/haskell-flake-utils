@@ -1,17 +1,22 @@
 {
-  description = "Haskell cabal package";
+description = "Haskell cabal package";
 
-  inputs = {
+inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
+    flake-utils.url = "github:numtide/flake-utils";
     haskell-flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
+    haskell-flake-utils.inputs.flake-utils.follows = "flake-utils";
 
     # another-simple-haskell-flake.url = "something";
 
-  };
+    # some-cabal-pkg.url = "github:example/some-cabal-pkg";
+    # some-cabal-pkg.flake = false;
+};
 
-  outputs = { self, nixpkgs, ... }@inputs:
-    inputs.haskell-flake-utils.lib.simpleCabal2flake {
-      inherit self nixpkgs;
+outputs = { self, nixpkgs, flake-utils, haskell-flake-utils, ... }@inputs:
+  flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+    haskell-flake-utils.lib.simpleCabal2flake {
+      inherit self nixpkgs system;
 
       # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`
       name = throw "put your package name here!";
@@ -31,8 +36,13 @@
       # preOverlay = ./overlay.nix;
 
       # Override haskell packages
-      # hpPreOverrides = { pkgs, system }: new: old: {
-      # };
+      # hpPreOverrides = { pkgs }: new: old:
+      #   with pkgs.haskell.lib; with haskell-flake-utils.lib;
+      #   tunePackages pkgs old {
+      #     some-haskellPackages-package = [ dontHaddock ];
+      #   } // {
+      #     some-cabal-pkg = ((jailbreakUnbreak pkgs) (dontCheck (old.callCabal2nix "some-cabal-pkg" inputs.some-cabal-pkg {})));
+      #   };
 
       # Arguments for callCabal2nix
       # cabal2nixArgs = {
@@ -45,10 +55,8 @@
       # shellExtBuildInputs = [];
 
       # Wether to build hoogle in the default shell
-      # shellwithHoogle = true;
+      # shellWithHoogle = true;
 
-      # Pass the list of supported systems
-      # systems = [ "x86_64-linux" ];
-
-    };
+    }
+  );
 }

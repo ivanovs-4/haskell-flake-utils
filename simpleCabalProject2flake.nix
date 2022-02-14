@@ -1,10 +1,12 @@
-{ lib, flake-utils }:
+{ lib, flake-utils }: with lib;
 # This function returns a flake outputs-compatible schema.
 {
   # pass an instance of self
   self
 , # pass an instance of the nixpkgs flake
   nixpkgs
+, # system
+  system
 , # package name
   name
 , #
@@ -32,52 +34,29 @@
 , # additional build intputs of the default shell
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
-  shellWithHoogle ? true
-, # pass the list of supported systems
-  systems ? [ "x86_64-linux" ]
+  shellWithHoogle ? false
 }:
+
 let
-
-  loadOverlay = obj:
-    if obj == null
-      then [ ]
-      else [ (maybeImport obj) ];
-
-  maybeImport = obj:
-    if (builtins.typeOf obj == "path") || (builtins.typeOf obj == "string")
-      then
-        import obj
-      else
-        obj;
-
-  maybeCall = obj: args:
-    if (builtins.typeOf obj == "lambda")
-      then
-        obj args
-      else
-        obj;
-
-  outputs = flake-utils.lib.eachSystem systems (system:
-    let
       pkgs = import nixpkgs {
         inherit system config;
         overlays = self.overlays.${system};
       };
 
       overlayWithHpPreOverrides = final: prev: {
-        haskellPackages = lib.haskellPackagesOverrideComposable prev (hpPreOverrides { inherit pkgs system; });
+        haskellPackages = lib.haskellPackagesOverrideComposable prev (hpPreOverrides { inherit pkgs; });
       };
 
       hpOverrides_ = (
           if hpOverrides != null
-          then hpOverrides { inherit pkgs system; }
+          then hpOverrides { inherit pkgs; }
           else (new: old:
             with pkgs.lib.attrsets;
             genAttrs packageNames_ (n:
               old.callCabal2nixWithOptions n self ("--subpath ${ attrByPath [n] n packageDirs }") (
                 attrByPath [n]
-                  (maybeCall cabal2nixArgs { inherit pkgs system; })
-                  (maybeCall packageCabal2nixArgs { inherit pkgs system; })
+                  (maybeCall cabal2nixArgs { inherit pkgs; })
+                  (maybeCall packageCabal2nixArgs { inherit pkgs; })
               )
             )
           )
@@ -91,7 +70,7 @@ let
 
       getAttrs = names: attrs: pkgs.lib.attrsets.genAttrs names (n: attrs.${n});
 
-    in (
+in
       {
 
         overlay = final: prev: prev.lib.composeManyExtensions ([ ]
@@ -104,7 +83,8 @@ let
 
         overlays = ([ self.overlay.${system} ]);
 
-        packages = getAttrs packageNames_ pkgs.haskellPackages;
+        packages = flake-utils.lib.flattenTree
+          (getAttrs packageNames_ pkgs.haskellPackages);
 
         defaultPackage = self.packages.${system}.${name};
 
@@ -127,13 +107,9 @@ let
                   cabal-install
                 ])
                 ++
-                (maybeCall shellExtBuildInputs { inherit pkgs system; })
+                (maybeCall shellExtBuildInputs { inherit pkgs; })
               );
             }
-        ) { inherit pkgs system; };
+        ) { inherit pkgs; };
       }
 
-    )
-  );
-
-in outputs

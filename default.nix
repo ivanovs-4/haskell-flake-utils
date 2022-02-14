@@ -18,6 +18,25 @@ let
   jailbreakUnbreak = pkgs: pkg:
       pkgs.haskell.lib.doJailbreak (pkg.overrideAttrs (_: { meta = { }; }));
 
+  loadOverlay = obj:
+    if obj == null
+      then [ ]
+      else [ (maybeImport obj) ];
+
+  maybeImport = obj:
+    if (builtins.typeOf obj == "path") || (builtins.typeOf obj == "string")
+      then
+        import obj
+      else
+        obj;
+
+  maybeCall = obj: args:
+    if (builtins.typeOf obj == "lambda")
+      then
+        obj args
+      else
+        obj;
+
   lib = {
     inherit
       simpleCabal2flake
@@ -25,6 +44,9 @@ let
       haskellPackagesOverrideComposable
       tunePackages
       jailbreakUnbreak
+      loadOverlay
+      maybeImport
+      maybeCall
       ;
   };
 in

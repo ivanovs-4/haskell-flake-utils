@@ -26,7 +26,7 @@
 , # additional build intputs of the default shell
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
-  shellwithHoogle ? true
+  shellWithHoogle ? true
 , # pass the list of supported systems
   systems ? [ "x86_64-linux" ]
 }:
@@ -105,7 +105,7 @@ let
             {pkgs, ...}:
             pkgs.haskellPackages.shellFor {
               packages = _: [ pkgs.haskellPackages.${name} ];
-              withHoogle = shellwithHoogle;
+              withHoogle = shellWithHoogle;
               buildInputs = (
                 with pkgs.haskellPackages; ([
                   ghcid

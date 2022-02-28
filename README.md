@@ -48,20 +48,30 @@ Input:
 
 #### Example
 
+[flake.nix](examples/simple-cabal2flake/flake.nix)
+
 Here is how it looks like in practice:
 
-[$ examples/simple-cabal2flake/flake.nix](examples/simple-cabal2flake/flake.nix) as nix
 ```nix
 {
-  description = "Haskell flake utils demo";
+description = "Haskell cabal package";
 
-  inputs.haskell-flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
+inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs";
+    flake-utils.url = "github:numtide/flake-utils";
+    haskell-flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
+    haskell-flake-utils.inputs.flake-utils.follows = "flake-utils";
+};
 
-  outputs = { self, nixpkgs, flake-utils }:
+outputs = { self, nixpkgs, flake-utils, haskell-flake-utils, ... }@inputs:
+  flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
     haskell-flake-utils.lib.simpleCabal2flake {
-      inherit self nixpkgs;
+      inherit self nixpkgs system;
+
       name = "cabal-package-name";
-    };
+
+    }
+  );
 }
 ```
 

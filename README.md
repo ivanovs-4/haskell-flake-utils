@@ -41,8 +41,10 @@ Input:
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
   shellwithHoogle ? true
-, # pass the list of supported systems
-  systems ? [ "x86_64-linux" ]
+  # we can choose compiler from pkgs.haskell.packages
+, compiler ? null
+  # overlays that will be used to build the package but will not be added to self.overlay
+, localOverlays ? []
 }: null
 ```
 

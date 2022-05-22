@@ -35,13 +35,23 @@
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
   shellWithHoogle ? false
+  # we can choose compiler from pkgs.haskell.packages
+, compiler ? null
+  # overlays that will be used to build the package but will not be added to self.overlay
+, localOverlays ? []
 }:
 
 let
       pkgs = import nixpkgs {
         inherit system config;
-        overlays = self.overlays.${system};
+        overlays = localOverlays_ ++ self.overlays.${system};
       };
+
+      localOverlays_ = localOverlays ++ (
+        if compiler == null
+          then []
+          else [ (final: prev: { haskellPackages = prev.haskell.packages.${compiler}; }) ]
+        );
 
       overlayWithHpPreOverrides = final: prev: {
         haskellPackages = lib.haskellPackagesOverrideComposable prev (hpPreOverrides { inherit pkgs; });

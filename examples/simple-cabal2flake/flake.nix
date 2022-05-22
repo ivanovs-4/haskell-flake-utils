@@ -3,9 +3,7 @@ description = "Haskell cabal package";
 
 inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
     haskell-flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
-    haskell-flake-utils.inputs.flake-utils.follows = "flake-utils";
 
     # another-simple-haskell-flake.url = "something";
 
@@ -13,10 +11,10 @@ inputs = {
     # some-cabal-pkg.flake = false;
 };
 
-outputs = { self, nixpkgs, flake-utils, haskell-flake-utils, ... }@inputs:
-  flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+outputs = { self, nixpkgs, haskell-flake-utils, ... }@inputs:
     haskell-flake-utils.lib.simpleCabal2flake {
-      inherit self nixpkgs system;
+      inherit self nixpkgs;
+      # systems = [ "x86_64-linux" ];
 
       # DON'T FORGET TO PUT YOUR PACKAGE NAME HERE, REMOVING `throw`
       name = throw "put your package name here!";
@@ -57,6 +55,5 @@ outputs = { self, nixpkgs, flake-utils, haskell-flake-utils, ... }@inputs:
       # Wether to build hoogle in the default shell
       # shellWithHoogle = true;
 
-    }
-  );
+    };
 }

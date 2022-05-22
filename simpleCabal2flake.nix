@@ -5,8 +5,8 @@
   self
 , # pass an instance of the nixpkgs flake
   nixpkgs
-, # system
-  system
+, # systems to pass to flake-utils.lib.eachSystem
+  systems ? flake-utils.lib.defaultSystems
 , # package name
   name
 , # nixpkgs config
@@ -29,81 +29,81 @@
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
   shellWithHoogle ? false
-  # we can choose compiler from pkgs.haskell.packages
-, compiler ? null
-  # overlays that will be used to build the package but will not be added to self.overlay
-, localOverlays ? []
+, # we can choose compiler from pkgs.haskell.packages
+  compiler ? null
+, # overlays that will be used to build the package but will not be added to self.overlay
+  localOverlays ? []
 }:
+
 let
-      pkgs = import nixpkgs {
-        inherit system config;
-        overlays = localOverlays_ ++ self.overlays.${system};
-      };
+    localOverlays_ = localOverlays ++ (
+      if compiler == null
+        then []
+        else [ (final: prev: { haskellPackages = prev.haskell.packages.${compiler}; }) ]
+      );
 
-      localOverlays_ = localOverlays ++ (
-        if compiler == null
-          then []
-          else [ (final: prev: { haskellPackages = prev.haskell.packages.${compiler}; }) ]
-        );
+    overlayWithHpPreOverrides = final: prev: {
+      haskellPackages = lib.haskellPackagesOverrideComposable prev (hpPreOverrides { pkgs = prev; });
+    };
 
-      overlayWithHpPreOverrides = final: prev: {
-        haskellPackages = lib.haskellPackagesOverrideComposable prev (hpPreOverrides { inherit pkgs; });
-      };
+    overlayOur = final: prev: {
+      haskellPackages = lib.haskellPackagesOverrideComposable prev (
+        if hpOverrides != null
+        then hpOverrides { pkgs = prev; }
+        else (new: old: {
+            "${name}" = old.callCabal2nix name self (maybeCall cabal2nixArgs { pkgs = prev; });
+          })
+      );
+    };
 
-      hpOverrides_ = (
-          if hpOverrides != null
-          then hpOverrides { inherit pkgs; }
-          else new: old: {
-              "${name}" = old.callCabal2nix name self (maybeCall cabal2nixArgs { inherit pkgs; });
-            }
-        );
-
-      overlayOur = final: prev: {
-        haskellPackages = lib.haskellPackagesOverrideComposable prev hpOverrides_;
-      };
-
-      getAttrs = names: attrs: pkgs.lib.attrsets.genAttrs names (n: attrs.${n});
+    defaultOverlay = final: prev:
+      prev.lib.composeManyExtensions ([ ]
+        ++ preOverlays
+        ++ (map (fl: fl.overlays.default) haskellFlakes)
+        ++ (loadOverlay preOverlay)
+        ++ [ overlayWithHpPreOverrides ]
+        ++ [ overlayOur ]
+        ) final prev;
 
 in
-      {
+  {
+    overlays = {"default" = defaultOverlay; };
+  }
+  //
+  (flake-utils.lib.eachSystem systems (system:
+    let
+      pkgs = import nixpkgs {
+        inherit system config;
+        overlays = localOverlays_ ++ [self.overlays.default];
+      };
 
-        overlay = final: prev: prev.lib.composeManyExtensions ([ ]
-          ++ preOverlays
-          ++ (map (fl: fl.overlay.${system}) haskellFlakes)
-          ++ (loadOverlay preOverlay)
-          ++ [ overlayWithHpPreOverrides ]
-          ++ [ overlayOur ]
-          ) final prev;
+      packages_ = flake-utils.lib.flattenTree {
+        "${name}" = pkgs.haskellPackages.${name};
+      };
 
-        overlays = ([ self.overlay.${system} ]);
+    in {
 
-        packages = flake-utils.lib.flattenTree {
-          "${name}" = pkgs.haskellPackages.${name};
-        };
+      packages = packages_ // { "default" = packages_."${name}"; };
 
-        defaultPackage = self.packages.${system}.${name};
-
-      }
-
-      //
-
-      {
-        devShell = (
-          if shell != null
-          then maybeImport shell
-          else
-            {pkgs, ...}:
-            pkgs.haskellPackages.shellFor {
-              packages = _: [ pkgs.haskellPackages.${name} ];
-              withHoogle = shellWithHoogle;
-              buildInputs = (
-                with pkgs.haskellPackages; ([
-                  ghcid
-                  cabal-install
-                ])
-                ++
-                (maybeCall shellExtBuildInputs { inherit pkgs; })
-              );
-            }
+      devShells = {"default" = (
+        if shell != null
+        then maybeImport shell
+        else
+          {pkgs, ...}:
+          pkgs.haskellPackages.shellFor {
+            packages = _: [ pkgs.haskellPackages.${name} ];
+            withHoogle = shellWithHoogle;
+            buildInputs = (
+              with pkgs.haskellPackages; ([
+                ghcid
+                cabal-install
+              ])
+              ++
+              (maybeCall shellExtBuildInputs { inherit pkgs; })
+            );
+          }
         ) { inherit pkgs; };
-      }
+      };
+
+    }
+  ))

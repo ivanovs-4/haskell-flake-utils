@@ -21,6 +21,8 @@ Input:
   self
 , # pass an instance of the nixpkgs flake
   nixpkgs
+, # systems to pass to flake-utils.lib.eachSystem
+  systems ? flake-utils.lib.defaultSystems
 , # package name
   name
 , # nixpkgs config
@@ -41,10 +43,10 @@ Input:
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
   shellwithHoogle ? true
-  # we can choose compiler from pkgs.haskell.packages
-, compiler ? null
-  # overlays that will be used to build the package but will not be added to self.overlay
-, localOverlays ? []
+, # we can choose compiler from pkgs.haskell.packages
+  compiler ? null
+, # overlays that will be used to build the package but will not be added to self.overlay
+  localOverlays ? []
 }: null
 ```
 
@@ -60,20 +62,17 @@ description = "Haskell cabal package";
 
 inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs";
-    flake-utils.url = "github:numtide/flake-utils";
     haskell-flake-utils.url = "github:ivanovs-4/haskell-flake-utils";
-    haskell-flake-utils.inputs.flake-utils.follows = "flake-utils";
 };
 
-outputs = { self, nixpkgs, flake-utils, haskell-flake-utils, ... }@inputs:
-  flake-utils.lib.eachSystem [ "x86_64-linux" ] (system:
+outputs = { self, nixpkgs, haskell-flake-utils, ... }@inputs:
     haskell-flake-utils.lib.simpleCabal2flake {
-      inherit self nixpkgs system;
+      inherit self nixpkgs;
+      systems = [ "x86_64-linux" ];
 
       name = "cabal-package-name";
 
-    }
-  );
+    };
 }
 ```
 

@@ -43,14 +43,16 @@ outputs = { self, nixpkgs, haskell-flake-utils, ... }@inputs:
       #   };
 
       # Arguments for callCabal2nix
-      # cabal2nixArgs = {
+      # cabal2nixArgs = {pkgs}: {
       # };
 
       # Maps to the devShell output. Pass in a shell.nix file or function
       # shell = ./shell.nix
 
       # Additional build intputs of the default shell
-      # shellExtBuildInputs = [];
+      # shellExtBuildInputs = {pkgs}: with pkgs; [
+      #   haskellPackages.haskell-language-server
+      # ];
 
       # Wether to build hoogle in the default shell
       # shellWithHoogle = true;

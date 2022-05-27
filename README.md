@@ -35,11 +35,11 @@ Input:
   preOverlay ? null
 , # override haskell packages
   hpPreOverrides ? ({...}: _: _: { })
-, # arguments for callCabal2nix
+, # arguments for callCabal2nix. It could be a function which accepts a set with pkgs.
   cabal2nixArgs ? { }
 , # maps to the devShell output. Pass in a shell.nix file or function.
   shell ? null
-, # additional build intputs of the default shell
+, # additional build intputs of the default shell. It could be a function which accepts a set with pkgs.
   shellExtBuildInputs ? []
 , # wether to build hoogle in the default shell
   shellwithHoogle ? true

@@ -33,6 +33,8 @@
   compiler ? null
 , # overlays that will be used to build the package but will not be added to self.overlay
   localOverlays ? []
+  # list of override functions from haskell.lib
+, packagePostOverrides ? {pkgs}: []
 }:
 
 let
@@ -78,7 +80,8 @@ in
       };
 
       packages_ = flake-utils.lib.flattenTree {
-        "${name}" = pkgs.haskellPackages.${name};
+        "${name}" = foldCompose (maybeCall packagePostOverrides { inherit pkgs; })
+            pkgs.haskellPackages.${name};
       };
 
     in {

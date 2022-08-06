@@ -37,6 +37,10 @@ let
       else
         obj;
 
+  foldCompose = builtins.foldl'
+    (f: g: a: f (g a))
+    (x: x);
+
   lib = {
     inherit
       simpleCabal2flake
@@ -47,6 +51,7 @@ let
       loadOverlay
       maybeImport
       maybeCall
+      foldCompose
       ;
   };
 in

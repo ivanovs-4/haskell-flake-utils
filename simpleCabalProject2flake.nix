@@ -107,7 +107,12 @@ in
       getAttrs = names: attrs: pkgs.lib.attrsets.genAttrs names (n: attrs.${n});
 
     in {
-      packages = packages_ // { "default" = packages_."${name}"; };
+      packages = packages_ // {
+        "default" = pkgs.symlinkJoin {
+          name = "all";
+          paths = builtins.attrValues packages_;
+        };
+      };
 
       devShells = {"default" = (
         if shell != null

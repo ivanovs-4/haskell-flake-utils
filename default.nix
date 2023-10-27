@@ -3,6 +3,7 @@ let
   # This function tries to capture a common haskell cabal package flake pattern.
   simpleCabal2flake = import ./simpleCabal2flake.nix { inherit lib flake-utils; };
   simpleCabalProject2flake = import ./simpleCabalProject2flake.nix { inherit lib flake-utils; };
+  simpleHs2flake = import ./simpleHs2flake.nix { inherit lib flake-utils; };
 
   haskellPackagesOverrideComposable = pkgs: hpOverrides:
     pkgs.haskellPackages.override (oldAttrs: {
@@ -45,6 +46,7 @@ let
     inherit
       simpleCabal2flake
       simpleCabalProject2flake
+      simpleHs2flake
       haskellPackagesOverrideComposable
       tunePackages
       jailbreakUnbreak

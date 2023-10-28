@@ -6,13 +6,27 @@
 , systems ? flake-utils.lib.defaultSystems
 , pname
 , version ? "0.0.1"
-, scripts ? [ ]
 , hpackages ? _: [ ]
+, ghcOptions ? [
+    "-O3"
+    "-static"
+    "-threaded"
+    "-with-rtsopts=-N4 -A256m -H256m -K64m -AL256m -I0"
+  ]
+, tuneOutputs ? _: _: o: o
 }:
 
 let
-  scripts' = if scripts != [] then scripts else [pname];
-  script = builtins.head scripts';
+
+  src' = builtins.filterSource
+      (path: type: (type != "directory") && (nixpkgs.lib.hasSuffix ".hs" path))
+      (if src != null then src else self);
+
+  scripts = (with builtins; with nixpkgs.lib.attrsets; with nixpkgs.lib.strings;
+    (map (x: removeSuffix ".hs" x."name")
+      (filter (x: x."value" == "regular")
+        (mapAttrsToList nameValuePair (readDir src'))
+        )));
 
   withDefaultAllJoined = pkgs: kv: kv // {
     "default" = pkgs.symlinkJoin {
@@ -21,20 +35,17 @@ let
     };
   };
 
-  forEachToAttrs = xs: f: with builtins; listToAttrs (map (x: {name = x; value = f x;}) xs);
+  forEachToAttrs = xs: f: builtins.listToAttrs (map (x: {name = x; value = f x;}) xs);
 
   buildPackage = pkgs: sname: pkgs.stdenv.mkDerivation {
     inherit version;
     pname = sname;
+    src = src';
 
-    src = if src != null then src else self;
-
-    buildInputs = [ (pkgs.haskellPackages.ghcWithPackages hpackages) ];
+    buildInputs = with pkgs; [ (haskellPackages.ghcWithPackages hpackages) ];
 
     buildPhase = ''
-      ghc -O3 -static -threaded \
-        -with-rtsopts="-N4 -A256m -H256m -K64m -AL256m -I0" \
-        ${sname}.hs
+        ghc ${with nixpkgs.lib.strings; escapeShellArgs ghcOptions} ${sname}.hs
     '';
 
     installPhase = ''
@@ -55,13 +66,13 @@ let
   outputs = flake-utils.lib.eachSystem systems (system:
     let pkgs = nixpkgs.legacyPackages.${system};
 
-    in {
-      packages = if builtins.length scripts' == 1
-        then { "default" = buildPackage pkgs (builtins.head scripts'); }
-        else withDefaultAllJoined pkgs (forEachToAttrs scripts' (buildPackage pkgs))
+    in tuneOutputs system {inherit pkgs;} {
+      packages = if builtins.length scripts == 1
+        then { "default" = buildPackage pkgs (builtins.head scripts); }
+        else withDefaultAllJoined pkgs (forEachToAttrs scripts (buildPackage pkgs))
         ;
 
-      apps = (forEachToAttrs scripts' (sname: {
+      apps = (forEachToAttrs scripts (sname: {
         type = "app";
         program = "${self.packages.${system}.${sname}}/bin/${sname}";
       }));

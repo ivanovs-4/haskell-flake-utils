@@ -14,6 +14,8 @@
     "-with-rtsopts=-N4 -A256m -H256m -K64m -AL256m -I0"
   ]
 , tuneOutputs ? _: _: o: o
+, runtimeDepsDefault ? _: []
+, runtimeDeps ? _: {}
 }:
 
 let
@@ -37,20 +39,26 @@ let
 
   forEachToAttrs = xs: f: builtins.listToAttrs (map (x: {name = x; value = f x;}) xs);
 
-  buildPackage = pkgs: sname: pkgs.stdenv.mkDerivation {
+  buildPackage = sname: pkgs: rtdeps: pkgs.stdenv.mkDerivation {
     inherit version;
     pname = sname;
     src = src';
 
+    nativeBuildInputs = with pkgs; [ makeWrapper ];
     buildInputs = with pkgs; [ (haskellPackages.ghcWithPackages hpackages) ];
 
     buildPhase = ''
-        ghc ${with nixpkgs.lib.strings; escapeShellArgs ghcOptions} ${sname}.hs
+        ghc ${with nixpkgs.lib.strings; escapeShellArgs ghcOptions} "${sname}.hs"
     '';
 
     installPhase = ''
       mkdir -p $out/bin
-      mv ${sname} $out/bin/
+      mv "${sname}" $out/bin/
+    '';
+
+    postFixup = if rtdeps == [] then "" else ''
+      wrapProgram "$out/bin/${sname}" \
+        --prefix PATH : ${pkgs.lib.makeBinPath rtdeps}
     '';
 
     meta = with pkgs.lib; {
@@ -67,10 +75,21 @@ let
     let pkgs = nixpkgs.legacyPackages.${system};
 
     in tuneOutputs system {inherit pkgs;} {
-      packages = if builtins.length scripts == 1
-        then { "default" = buildPackage pkgs (builtins.head scripts); }
-        else withDefaultAllJoined pkgs (forEachToAttrs scripts (buildPackage pkgs))
-        ;
+
+      packages =
+        let allScripts =
+          (forEachToAttrs scripts
+              (sname:
+                (buildPackage sname pkgs
+                  (runtimeDepsDefault {inherit pkgs;}
+                      ++ (nixpkgs.lib.attrsets.attrByPath [sname] []
+                      (runtimeDeps {inherit pkgs;}))))));
+        in
+          with builtins;
+          (if length scripts == 1
+              then { "default" = head (attrValues allScripts); }
+              else withDefaultAllJoined pkgs allScripts
+          );
 
       apps = (forEachToAttrs scripts (sname: {
         type = "app";

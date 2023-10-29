@@ -21,15 +21,17 @@
 
 let
 
-  src' = builtins.filterSource
-      (path: type: (type != "directory") && (nixpkgs.lib.hasSuffix ".hs" path))
-      (if src != null then src else self);
+  src' = if src != null then src else self;
 
   scripts = (with builtins; with nixpkgs.lib.attrsets; with nixpkgs.lib.strings;
     (map (x: removeSuffix ".hs" x."name")
-      (filter (x: x."value" == "regular")
-        (mapAttrsToList nameValuePair (readDir src'))
-        )));
+      (filter (x: (x."value" == "regular") && (hasSuffix ".hs" x."name"))
+        (mapAttrsToList nameValuePair
+          (readDir (
+            builtins.filterSource
+              (path: type: (type != "directory") && (nixpkgs.lib.hasSuffix ".hs" path))
+              src'
+      ))))));
 
   withDefaultAllJoined = pkgs: kv: kv // {
     "default" = pkgs.symlinkJoin {
@@ -44,10 +46,9 @@ let
     lib.tunePackages pkgs old (tune-hpackages pkgs)
   );
 
-  buildPackage = sname: pkgs: rtdeps: pkgs.stdenv.mkDerivation {
-    inherit version;
+  buildPackage = src: sname: pkgs: rtdeps: pkgs.stdenv.mkDerivation {
+    inherit src version;
     pname = sname;
-    src = src';
 
     nativeBuildInputs = with pkgs; [ makeWrapper ];
     buildInputs = [ ((hpkgs pkgs).ghcWithPackages hpackages) ];
@@ -77,7 +78,9 @@ in
 with lib;
 let
   outputs = flake-utils.lib.eachSystem systems (system:
-    let pkgs = nixpkgs.legacyPackages.${system};
+    let
+      pkgs = nixpkgs.legacyPackages.${system};
+      src'' = pkgs.lib.cleanSource src';
 
     in tuneOutputs system {inherit pkgs;} {
 
@@ -85,7 +88,7 @@ let
         let allScripts =
           (forEachToAttrs scripts
               (sname:
-                (buildPackage sname pkgs
+                (buildPackage src'' sname pkgs
                   (runtimeDepsDefault {inherit pkgs;}
                       ++ (nixpkgs.lib.attrsets.attrByPath [sname] []
                       (runtimeDeps {inherit pkgs;}))))));

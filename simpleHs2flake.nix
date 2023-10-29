@@ -16,6 +16,7 @@
 , tuneOutputs ? _: _: o: o
 , runtimeDepsDefault ? _: []
 , runtimeDeps ? _: {}
+, tune-hpackages ? _: _: {}
 }:
 
 let
@@ -39,13 +40,17 @@ let
 
   forEachToAttrs = xs: f: builtins.listToAttrs (map (x: {name = x; value = f x;}) xs);
 
+  hpkgs = pkgs: lib.haskellPackagesOverrideComposable pkgs (new: old:
+    lib.tunePackages pkgs old (tune-hpackages pkgs)
+  );
+
   buildPackage = sname: pkgs: rtdeps: pkgs.stdenv.mkDerivation {
     inherit version;
     pname = sname;
     src = src';
 
     nativeBuildInputs = with pkgs; [ makeWrapper ];
-    buildInputs = with pkgs; [ (haskellPackages.ghcWithPackages hpackages) ];
+    buildInputs = [ ((hpkgs pkgs).ghcWithPackages hpackages) ];
 
     buildPhase = ''
         ghc ${with nixpkgs.lib.strings; escapeShellArgs ghcOptions} "${sname}.hs"
@@ -97,7 +102,7 @@ let
       }));
 
       devShells.default = pkgs.mkShell {
-        buildInputs = with pkgs.haskellPackages; [
+        buildInputs = with (hpkgs pkgs); [
           (ghcWithPackages hpackages)
         ]
         ++ (runtimeDepsDefault {inherit pkgs;})

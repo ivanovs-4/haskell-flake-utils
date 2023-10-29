@@ -99,7 +99,10 @@ let
       devShells.default = pkgs.mkShell {
         buildInputs = with pkgs.haskellPackages; [
           (ghcWithPackages hpackages)
-        ];
+        ]
+        ++ (runtimeDepsDefault {inherit pkgs;})
+        ++ (with builtins; concatLists (attrValues (runtimeDeps {inherit pkgs;})))
+        ;
       };
 
     });

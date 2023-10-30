@@ -93,11 +93,7 @@ let
                       ++ (nixpkgs.lib.attrsets.attrByPath [sname] []
                       (runtimeDeps {inherit pkgs;}))))));
         in
-          with builtins;
-          (if length scripts == 1
-              then { "default" = head (attrValues allScripts); }
-              else withDefaultAllJoined pkgs allScripts
-          );
+          withDefaultAllJoined pkgs allScripts;
 
       apps = (forEachToAttrs scripts (sname: {
         type = "app";

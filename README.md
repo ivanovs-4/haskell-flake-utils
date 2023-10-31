@@ -102,3 +102,16 @@ nix build
 ```
 
 Also this new flake may be used in `haskellFlakes` from other such flakes.
+
+
+
+### `simpleHs2flake`
+
+#### Example
+
+[flake.nix](examples/simple-hs2flake/flake.nix)
+
+Nix flake template available:
+```
+nix flake init -t github:ivanovs-4/haskell-flake-utils#simple-hs2flake
+```

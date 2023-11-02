@@ -16,7 +16,7 @@
 , tuneOutputs ? _: _: o: o
 , runtimeDepsDefault ? _: []
 , runtimeDeps ? _: {}
-, tune-hpackages ? _: _: {}
+, tune-hpackages ? _: {}
 }:
 
 let

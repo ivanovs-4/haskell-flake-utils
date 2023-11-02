@@ -17,6 +17,7 @@
 , runtimeDepsDefault ? _: []
 , runtimeDeps ? _: {}
 , tune-hpackages ? _: {}
+, extShellBuildInputs ? _: []
 }:
 
 let
@@ -106,6 +107,7 @@ let
         ]
         ++ (runtimeDepsDefault {inherit pkgs;})
         ++ (with builtins; concatLists (attrValues (runtimeDeps {inherit pkgs;})))
+        ++ (extShellBuildInputs {inherit pkgs;})
         ;
       };
 

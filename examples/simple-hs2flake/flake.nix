@@ -29,5 +29,9 @@
         ];
       };
 
+      extShellBuildInputs = {pkgs}: with pkgs; [
+        haskellPackages.haskell-language-server
+      ];
+
     };
 }

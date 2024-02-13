@@ -3,6 +3,8 @@
 {
   # pass an instance of self
   self
+, #
+  src ? self
 , # pass an instance of the nixpkgs flake
   nixpkgs
 , # systems to pass to flake-utils.lib.eachSystem
@@ -53,7 +55,7 @@ let
         if hpOverrides != null
         then hpOverrides { pkgs = prev; }
         else (new: old: {
-            "${name}" = old.callCabal2nix name self (maybeCall cabal2nixArgs { pkgs = prev; });
+            "${name}" = old.callCabal2nix name (prev.lib.cleanSource src) (maybeCall cabal2nixArgs { pkgs = prev; });
           })
       );
     };

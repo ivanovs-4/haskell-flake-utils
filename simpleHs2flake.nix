@@ -18,6 +18,7 @@
 , runtimeDeps ? _: {}
 , tune-hpackages ? _: {}
 , extShellBuildInputs ? _: []
+, compiler ? null
 }:
 
 let
@@ -80,7 +81,17 @@ with lib;
 let
   outputs = flake-utils.lib.eachSystem systems (system:
     let
-      pkgs = nixpkgs.legacyPackages.${system};
+
+      pkgs = import nixpkgs {
+        inherit system;
+        config = {};
+        overlays = (
+          if compiler == null
+          then []
+          else [ (final: prev: { haskellPackages = prev.haskell.packages.${compiler}; }) ]
+          );
+      };
+
       src'' = pkgs.lib.cleanSource src';
 
     in tuneOutputs system {inherit pkgs;} {
